@@ -15,8 +15,7 @@ describe('Kitchen ServiceStack (API & Lambda)', () => {
 
     const app = new cdk.App({
       context: {
-        s3CookbooksBucket: 'test-cookbooks-bucket',
-        dynamoCookbooksTable: 'test-cookbooks-table',
+        firebaseProjectId: 'kassi-242d1',
         openAiApiKey: '/test/openai-api-key',
       },
     });
@@ -36,8 +35,7 @@ describe('Kitchen ServiceStack (API & Lambda)', () => {
 
     const app = new cdk.App({
       context: {
-        s3CookbooksBucket: 'test-cookbooks-bucket',
-        dynamoCookbooksTable: 'test-cookbooks-table',
+        firebaseProjectId: 'kassi-242d1',
         openAiApiKey: '/test/openai-api-key',
       },
     });
@@ -64,7 +62,7 @@ describe('Kitchen ServiceStack (API & Lambda)', () => {
     });
 
     template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
-      RouteKey: 'GET /loadRecipe',
+      RouteKey: 'GET /health',
     });
 
     delete process.env.PREPPER_IMAGE_TAG;
@@ -77,8 +75,7 @@ describe('Kitchen ServiceStack (API & Lambda)', () => {
 
     const app = new cdk.App({
       context: {
-        s3CookbooksBucket: 'test-cookbooks-bucket',
-        dynamoCookbooksTable: 'test-cookbooks-table',
+        firebaseProjectId: 'kassi-242d1',
         openAiApiKey: '/test/openai-api-key',
       },
     });
@@ -111,8 +108,7 @@ describe('Kitchen ServiceStack (API & Lambda)', () => {
 
     const app = new cdk.App({
       context: {
-        s3CookbooksBucket: 'test-cookbooks-bucket',
-        dynamoCookbooksTable: 'test-cookbooks-table',
+        firebaseProjectId: 'kassi-242d1',
         openAiApiKey: '/test/openai-api-key',
       },
     });

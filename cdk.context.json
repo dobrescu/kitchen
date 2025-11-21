@@ -7,7 +7,6 @@
   "domainName": "cook.hautomation.org",
   "hostedZoneName": "hautomation.org",
   "openAiApiKey": "/kitchen/chef/api/open-ai",
-  "s3CookbooksBucket": "amplify-cookifybackend-da-baserecipemetadatabucket-thqkr5sodqvs",
-  "dynamoCookbooksTable": "BaseRecipe-noghhajnira5dabnlgb4anws7m-NONE"
+  "firebaseProjectId": "kassi-242d1"
 
 }

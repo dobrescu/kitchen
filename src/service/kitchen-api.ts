@@ -4,13 +4,15 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as route53targets from 'aws-cdk-lib/aws-route53-targets';
 import * as certificatemanager from 'aws-cdk-lib/aws-certificatemanager';
+import { HttpJwtAuthorizer } from 'aws-cdk-lib/aws-apigatewayv2-authorizers';
 import { Construct } from 'constructs';
 
 export interface KitchenApiProps {
-  readonly prepperFunction: lambda.Function;
-  readonly chefFunction: lambda.Function;
-  readonly domainName: string;
-  readonly hostedZoneName: string;
+	readonly prepperFunction: lambda.Function;
+	readonly chefFunction: lambda.Function;
+	readonly domainName: string;
+	readonly hostedZoneName: string;
+	readonly firebaseAuthorizer: HttpJwtAuthorizer;
 }
 
 export class KitchenApi extends Construct {
@@ -20,33 +22,30 @@ export class KitchenApi extends Construct {
   constructor(scope: Construct, id: string, props: KitchenApiProps) {
     super(scope, id);
 
-    // Lookup existing hosted zone
     const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
       domainName: props.hostedZoneName,
     });
 
-    // Certificate for custom domain
     const certificate = new certificatemanager.Certificate(this, 'Certificate', {
       domainName: props.domainName,
       validation: certificatemanager.CertificateValidation.fromDns(hostedZone),
     });
 
-    // HTTP API Gateway
     this.api = new apigwv2.HttpApi(this, 'HttpApi', {
       apiName: 'KitchenHttpApi',
-      description: 'Kitchen API Gateway (HTTP API v2)',
+      description: 'Kitchen API Gateway (HTTP API v2) with Firebase JWT authentication',
       corsPreflight: {
         allowOrigins: ['*'],
         allowMethods: [
           apigwv2.CorsHttpMethod.GET,
           apigwv2.CorsHttpMethod.POST,
+          apigwv2.CorsHttpMethod.PUT,
           apigwv2.CorsHttpMethod.OPTIONS,
         ],
         allowHeaders: ['Content-Type', 'Authorization'],
       },
     });
 
-    // Lambda integrations
     const prepperIntegration = new integrations.HttpLambdaIntegration(
       'PrepperIntegration',
       props.prepperFunction
@@ -57,7 +56,6 @@ export class KitchenApi extends Construct {
       props.chefFunction
     );
 
-    // API Routes
     this.api.addRoutes({
       path: '/fetch',
       methods: [apigwv2.HttpMethod.GET],
@@ -65,24 +63,49 @@ export class KitchenApi extends Construct {
     });
 
     this.api.addRoutes({
-      path: '/loadRecipe',
+      path: '/health',
       methods: [apigwv2.HttpMethod.GET],
       integration: chefIntegration,
     });
 
-    // Custom domain
+    this.api.addRoutes({
+      path: '/recipe/load',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: chefIntegration,
+      authorizer: props.firebaseAuthorizer,
+    });
+
+    this.api.addRoutes({
+      path: '/recipe/{urlHash}/improve',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: chefIntegration,
+      authorizer: props.firebaseAuthorizer,
+    });
+
+    this.api.addRoutes({
+      path: '/recipe/{urlHash}',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: chefIntegration,
+      authorizer: props.firebaseAuthorizer,
+    });
+
+    this.api.addRoutes({
+      path: '/recipe/{urlHash}',
+      methods: [apigwv2.HttpMethod.PUT],
+      integration: chefIntegration,
+      authorizer: props.firebaseAuthorizer,
+    });
+
     this.domain = new apigwv2.DomainName(this, 'CustomDomain', {
       domainName: props.domainName,
       certificate,
     });
 
-    // Map the API base path to the custom domain
     new apigwv2.ApiMapping(this, 'ApiMapping', {
       api: this.api,
       domainName: this.domain,
     });
 
-    // Route53 alias record for the custom domain
     new route53.ARecord(this, 'AliasRecord', {
       zone: hostedZone,
       recordName: props.domainName,
