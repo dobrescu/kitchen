@@ -131,8 +131,7 @@ describe('ServiceStack (API Gateway & Lambdas)', () => {
 
     app = new cdk.App({
       context: {
-        s3CookbooksBucket: 'test-cookbooks-bucket',
-        dynamoCookbooksTable: 'test-cookbooks-table',
+        firebaseProjectId: 'kassi-242d1',
         openAiApiKey: '/test/openai-api-key',
       },
     });
@@ -210,6 +209,39 @@ describe('ServiceStack (API Gateway & Lambdas)', () => {
     });
   });
 
+  describe('Storage Resources', () => {
+    test('creates S3 bucket for recipe metadata', () => {
+      template.hasResourceProperties('AWS::S3::Bucket', {
+        BucketName: 'recipe-metadata',
+      });
+    });
+
+    test('creates DynamoDB table for recipes', () => {
+      template.hasResourceProperties('AWS::DynamoDB::Table', {
+        TableName: 'Recipes',
+        BillingMode: 'PAY_PER_REQUEST',
+        AttributeDefinitions: [
+          { AttributeName: 'PK', AttributeType: 'S' },
+          { AttributeName: 'SK', AttributeType: 'S' },
+        ],
+        KeySchema: [
+          { AttributeName: 'PK', KeyType: 'HASH' },
+          { AttributeName: 'SK', KeyType: 'RANGE' },
+        ],
+      });
+    });
+
+    test('enables encryption and PITR for DynamoDB table', () => {
+      const tables = template.findResources('AWS::DynamoDB::Table');
+      const recipesTable = Object.values(tables).find(
+        (t: any) => t.Properties.TableName === 'Recipes'
+      );
+      expect(recipesTable).toBeDefined();
+      expect(recipesTable.Properties.SSESpecification).toBeDefined();
+      expect(recipesTable.Properties.PointInTimeRecoverySpecification).toEqual({ PointInTimeRecoveryEnabled: true });
+    });
+  });
+
   describe('API Gateway', () => {
     test('creates HTTP API v2', () => {
       template.hasResourceProperties('AWS::ApiGatewayV2::Api', {
@@ -224,13 +256,42 @@ describe('ServiceStack (API Gateway & Lambdas)', () => {
       });
     });
 
-    test('creates API routes for /fetch and /loadRecipe', () => {
+    test('creates API routes for Prepper and Chef', () => {
+      // Prepper route
       template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
         RouteKey: 'GET /fetch',
       });
 
+      // Chef routes
       template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
-        RouteKey: 'GET /loadRecipe',
+        RouteKey: 'GET /health',
+      });
+
+      template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+        RouteKey: 'POST /recipe/load',
+      });
+
+      template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+        RouteKey: 'POST /recipe/{urlHash}/improve',
+      });
+
+      template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+        RouteKey: 'GET /recipe/{urlHash}',
+      });
+
+      template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+        RouteKey: 'PUT /recipe/{urlHash}',
+      });
+    });
+
+    test('creates Firebase JWT authorizer', () => {
+      template.hasResourceProperties('AWS::ApiGatewayV2::Authorizer', {
+        AuthorizerType: 'JWT',
+        IdentitySource: ['$request.header.Authorization'],
+        JwtConfiguration: Match.objectLike({
+          Audience: ['kassi-242d1'],
+          Issuer: 'https://securetoken.google.com/kassi-242d1',
+        }),
       });
     });
 
@@ -448,8 +509,7 @@ describe('Stack Integration', () => {
     const app = new cdk.App({
       context: {
         'github-connection-arn': 'arn:aws:codeconnections:eu-central-1:123456789012:connection/test-connection',
-        s3CookbooksBucket: 'test-cookbooks-bucket',
-        dynamoCookbooksTable: 'test-cookbooks-table',
+        firebaseProjectId: 'kassi-242d1',
         openAiApiKey: '/test/openai-api-key',
       },
     });

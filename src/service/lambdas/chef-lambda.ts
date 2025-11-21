@@ -1,19 +1,20 @@
 import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as iam from 'aws-cdk-lib/aws-iam';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import { Construct } from 'constructs';
 import { loadImageReference } from '../../shared/image-reference-loader.js';
 import { createLambdaExecutionRole } from '../../shared/lambda-role.js';
 
 export interface ChefLambdaProps {
-  readonly repositoryArn: string;
-  readonly repositoryName: string;
-  readonly s3CookbooksBucket: string;
-  readonly dynamoCookbooksTable: string;
-  readonly prepperUrl: string;
+	readonly repositoryArn: string;
+	readonly repositoryName: string;
+	readonly cookbooksBucket: s3.IBucket;
+	readonly cookbooksTable: dynamodb.ITable;
+	readonly prepperUrl: string;
 }
 
 export class ChefLambda extends Construct {
@@ -53,41 +54,15 @@ export class ChefLambda extends Construct {
       logGroup: chefLogGroup,
       environment: {
         OPENAI_API_KEY: openAiValue,
-        S3_COOKBOOKS: props.s3CookbooksBucket,
-        DYNAMODB_COOKBOOKS: props.dynamoCookbooksTable,
+        S3_COOKBOOKS: props.cookbooksBucket.bucketName,
+        DYNAMODB_COOKBOOKS: props.cookbooksTable.tableName,
         PREPPER_URL: props.prepperUrl,
       },
     });
 
-    // Grant DynamoDB CRUD permissions
-    lambdaRole.addToPolicy(new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      actions: [
-        'dynamodb:GetItem',
-        'dynamodb:PutItem',
-        'dynamodb:UpdateItem',
-        'dynamodb:DeleteItem',
-        'dynamodb:Query',
-        'dynamodb:Scan',
-      ],
-      resources: [
-        `arn:aws:dynamodb:${cdk.Stack.of(this).region}:${cdk.Stack.of(this).account}:table/${props.dynamoCookbooksTable}`,
-      ],
-    }));
-
-    // Grant S3 CRUD permissions
-    lambdaRole.addToPolicy(new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      actions: [
-        's3:GetObject',
-        's3:PutObject',
-        's3:DeleteObject',
-        's3:ListBucket',
-      ],
-      resources: [
-        `arn:aws:s3:::${props.s3CookbooksBucket}`,
-        `arn:aws:s3:::${props.s3CookbooksBucket}/*`,
-      ],
-    }));
+    // Grant read/write access to S3 bucket and DynamoDB table
+    // Uses CDK grants (more maintainable than manual IAM policies)
+    props.cookbooksBucket.grantReadWrite(this.function);
+    props.cookbooksTable.grantReadWriteData(this.function);
   }
 }

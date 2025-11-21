@@ -4,13 +4,15 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as route53targets from 'aws-cdk-lib/aws-route53-targets';
 import * as certificatemanager from 'aws-cdk-lib/aws-certificatemanager';
+import { HttpJwtAuthorizer } from 'aws-cdk-lib/aws-apigatewayv2-authorizers';
 import { Construct } from 'constructs';
 
 export interface KitchenApiProps {
-  readonly prepperFunction: lambda.Function;
-  readonly chefFunction: lambda.Function;
-  readonly domainName: string;
-  readonly hostedZoneName: string;
+	readonly prepperFunction: lambda.Function;
+	readonly chefFunction: lambda.Function;
+	readonly domainName: string;
+	readonly hostedZoneName: string;
+	readonly firebaseAuthorizer: HttpJwtAuthorizer;
 }
 
 export class KitchenApi extends Construct {
@@ -34,12 +36,13 @@ export class KitchenApi extends Construct {
     // HTTP API Gateway
     this.api = new apigwv2.HttpApi(this, 'HttpApi', {
       apiName: 'KitchenHttpApi',
-      description: 'Kitchen API Gateway (HTTP API v2)',
+      description: 'Kitchen API Gateway (HTTP API v2) with Firebase JWT authentication',
       corsPreflight: {
         allowOrigins: ['*'],
         allowMethods: [
           apigwv2.CorsHttpMethod.GET,
           apigwv2.CorsHttpMethod.POST,
+          apigwv2.CorsHttpMethod.PUT,
           apigwv2.CorsHttpMethod.OPTIONS,
         ],
         allowHeaders: ['Content-Type', 'Authorization'],
@@ -57,17 +60,56 @@ export class KitchenApi extends Construct {
       props.chefFunction
     );
 
-    // API Routes
+    // ===================
+    // Prepper Routes (no auth)
+    // ===================
     this.api.addRoutes({
       path: '/fetch',
       methods: [apigwv2.HttpMethod.GET],
       integration: prepperIntegration,
     });
 
+    // ===================
+    // Chef Routes
+    // ===================
+
+    // Health check (no auth)
     this.api.addRoutes({
-      path: '/loadRecipe',
+      path: '/health',
       methods: [apigwv2.HttpMethod.GET],
       integration: chefIntegration,
+    });
+
+    // Load recipe (authenticated)
+    this.api.addRoutes({
+      path: '/recipe/load',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: chefIntegration,
+      authorizer: props.firebaseAuthorizer,
+    });
+
+    // Improve recipe with AI (authenticated)
+    this.api.addRoutes({
+      path: '/recipe/{urlHash}/improve',
+      methods: [apigwv2.HttpMethod.POST],
+      integration: chefIntegration,
+      authorizer: props.firebaseAuthorizer,
+    });
+
+    // Get recipe by urlHash (authenticated)
+    this.api.addRoutes({
+      path: '/recipe/{urlHash}',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: chefIntegration,
+      authorizer: props.firebaseAuthorizer,
+    });
+
+    // Update recipe (authenticated)
+    this.api.addRoutes({
+      path: '/recipe/{urlHash}',
+      methods: [apigwv2.HttpMethod.PUT],
+      integration: chefIntegration,
+      authorizer: props.firebaseAuthorizer,
     });
 
     // Custom domain
