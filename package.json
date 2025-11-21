@@ -1,0 +1,44 @@
+{
+  "name": "kitchen",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": "dist/bin/kitchen.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "dotenv cdk",
+    "cdk:deploy:all": "dotenv -- cdk deploy --all --require-approval never",
+    "cdk:deploy:kitchen:infra": "dotenv -- cdk deploy kitchen-infra --require-approval never",
+    "cdk:deploy:kitchen": "dotenv -- cdk deploy kitchen --require-approval never",
+    "cdk:deploy:kitchen:cicd": "dotenv -- cdk deploy kitchen-cicd --require-approval never",
+    "dev": "tsx src/bin/kitchen.ts",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "typecheck": "tsc --noEmit",
+    "synth": "dotenv cdk synth",
+    "deploy": "dotenv cdk deploy --all",
+    "resolve-digests": "bash scripts/resolve-image-digests.sh"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@stylistic/eslint-plugin-js": "^2.9.0",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.7.9",
+    "aws-cdk": "^2.1030.0",
+    "dotenv-cli": "^10.0.0",
+    "eslint": "^9.13.0",
+    "eslint-plugin-unused-imports": "^4.1.4",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.11.0"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.220.0",
+    "constructs": "^10.0.0",
+    "dotenv": "^17.2.3"
+  },
+  "packageManager": "yarn@4.8.1+sha512.bc946f2a022d7a1a38adfc15b36a66a3807a67629789496c3714dd1703d2e6c6b1c69ff9ec3b43141ac7a1dd853b7685638eb0074300386a59c18df351ef8ff6"
+}

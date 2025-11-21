@@ -1,0 +1,33 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo "Installing dependencies..."
+      - yarn install --immutable
+
+  pre_build:
+    commands:
+      - echo "Running tests..."
+      - yarn test --watchAll=false
+      - echo "Linting code..."
+      - yarn lint
+      - echo "Type checking..."
+      - yarn typecheck
+
+  build:
+    commands:
+      - echo "Resolving ECR image digests..."
+      - yarn resolve-digests
+      - echo "Building TypeScript..."
+      - yarn build
+      - echo "Deploying kitchen stack..."
+      - npx cdk deploy kitchen --require-approval never
+
+  post_build:
+    commands:
+      - echo "Deployment complete!"
+
+artifacts:
+  files:
+    - '**/*'

@@ -1,0 +1,13 @@
+{
+  "hosted-zone:account=467241965301:domainName=hautomation.org:region=eu-central-1": {
+    "Id": "/hostedzone/ZGETJ0CHYVAWA",
+    "Name": "hautomation.org."
+  },
+  "github-connection-arn": "arn:aws:codeconnections:eu-central-1:467241965301:connection/d1a75fd7-9462-4e35-be4d-1ff1ce9e019f",
+  "domainName": "cook.hautomation.org",
+  "hostedZoneName": "hautomation.org",
+  "openAiApiKey": "/kitchen/chef/api/open-ai",
+  "s3CookbooksBucket": "amplify-cookifybackend-da-baserecipemetadatabucket-thqkr5sodqvs",
+  "dynamoCookbooksTable": "BaseRecipe-noghhajnira5dabnlgb4anws7m-NONE"
+
+}
