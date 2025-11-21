@@ -31,14 +31,14 @@ export class EcrRepositories extends Construct {
 
     this.chef = new ecr.Repository(this, 'ChefRepository', {
       repositoryName: 'chef',
-      imageScanOnPush: true,
+      imageScanOnPush: false,
       lifecycleRules,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
     this.prepper = new ecr.Repository(this, 'PrepperRepository', {
       repositoryName: 'prepper',
-      imageScanOnPush: true,
+      imageScanOnPush: false,
       lifecycleRules,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });

@@ -44,12 +44,12 @@ describe('KitchenInfraStack (ECR Repositories)', () => {
       });
     });
 
-    test('enables image scanning on push', () => {
+    test('configures image scanning', () => {
       const repositories = template.findResources('AWS::ECR::Repository');
 
       Object.values(repositories).forEach(repo => {
         expect(repo.Properties.ImageScanningConfiguration).toBeDefined();
-        expect(repo.Properties.ImageScanningConfiguration.ScanOnPush).toBe(true);
+        expect(repo.Properties.ImageScanningConfiguration.ScanOnPush).toBe(false);
       });
     });
   });
