@@ -48,8 +48,8 @@ describe('KitchenInfraStack (ECR Repositories)', () => {
       const repositories = template.findResources('AWS::ECR::Repository');
 
       Object.values(repositories).forEach(repo => {
-        // Note: imageScanOnPush is set to false in current implementation
         expect(repo.Properties.ImageScanningConfiguration).toBeDefined();
+        expect(repo.Properties.ImageScanningConfiguration.ScanOnPush).toBe(true);
       });
     });
   });
@@ -133,6 +133,7 @@ describe('ServiceStack (API Gateway & Lambdas)', () => {
       context: {
         s3CookbooksBucket: 'test-cookbooks-bucket',
         dynamoCookbooksTable: 'test-cookbooks-table',
+        openAiApiKey: '/test/openai-api-key',
       },
     });
     infraStack = new KitchenInfraStack(app, 'TestKitchenInfraStack', { env: testEnv });
@@ -161,11 +162,17 @@ describe('ServiceStack (API Gateway & Lambdas)', () => {
     });
 
     test('configures Lambda functions with correct memory and timeout', () => {
-      const functions = template.findResources('AWS::Lambda::Function');
+      // Chef Lambda: 512MB, Prepper Lambda: 4096MB, both 30s timeout
+      template.hasResourceProperties('AWS::Lambda::Function', {
+        FunctionName: 'chef',
+        MemorySize: 512,
+        Timeout: 30,
+      });
 
-      Object.values(functions).forEach(fn => {
-        expect(fn.Properties.MemorySize).toBe(512);
-        expect(fn.Properties.Timeout).toBe(30);
+      template.hasResourceProperties('AWS::Lambda::Function', {
+        FunctionName: 'prepper',
+        MemorySize: 4096,
+        Timeout: 30,
       });
     });
 
@@ -180,7 +187,18 @@ describe('ServiceStack (API Gateway & Lambdas)', () => {
 
     test('assigns execution role to Lambda functions', () => {
       template.hasResourceProperties('AWS::IAM::Role', {
-        RoleName: 'KitchenLambdaExecutionRole',
+        RoleName: 'ChefLambdaExecutionRole',
+        AssumeRolePolicyDocument: Match.objectLike({
+          Statement: Match.arrayWith([
+            Match.objectLike({
+              Principal: { Service: 'lambda.amazonaws.com' },
+            }),
+          ]),
+        }),
+      });
+
+      template.hasResourceProperties('AWS::IAM::Role', {
+        RoleName: 'PrepperLambdaExecutionRole',
         AssumeRolePolicyDocument: Match.objectLike({
           Statement: Match.arrayWith([
             Match.objectLike({
@@ -193,29 +211,32 @@ describe('ServiceStack (API Gateway & Lambdas)', () => {
   });
 
   describe('API Gateway', () => {
-    test('creates REST API', () => {
-      template.hasResourceProperties('AWS::ApiGateway::RestApi', {
-        Description: 'Kitchen API Gateway',
+    test('creates HTTP API v2', () => {
+      template.hasResourceProperties('AWS::ApiGatewayV2::Api', {
+        Name: 'KitchenHttpApi',
+        ProtocolType: 'HTTP',
       });
     });
 
     test('configures custom domain', () => {
-      template.hasResourceProperties('AWS::ApiGateway::DomainName', {
+      template.hasResourceProperties('AWS::ApiGatewayV2::DomainName', {
         DomainName: 'cook.hautomation.org',
       });
     });
 
-    test('creates API Gateway methods', () => {
-      template.hasResourceProperties('AWS::ApiGateway::Method', {
-        HttpMethod: 'GET',
+    test('creates API routes for /fetch and /loadRecipe', () => {
+      template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+        RouteKey: 'GET /fetch',
+      });
+
+      template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+        RouteKey: 'GET /loadRecipe',
       });
     });
 
     test('integrates Lambda functions with API Gateway', () => {
-      template.hasResourceProperties('AWS::ApiGateway::Method', {
-        Integration: Match.objectLike({
-          Type: 'AWS_PROXY',
-        }),
+      template.hasResourceProperties('AWS::ApiGatewayV2::Integration', {
+        IntegrationType: 'AWS_PROXY',
       });
     });
   });
@@ -223,8 +244,8 @@ describe('ServiceStack (API Gateway & Lambdas)', () => {
   describe('Stack Outputs', () => {
     test('outputs API Gateway URL', () => {
       const outputs = template.findOutputs('*');
-      expect(outputs.ApiUrl).toBeDefined();
-      expect(outputs.ApiGatewayUrl).toBeDefined();
+      expect(outputs.ApiCustomDomainUrl).toBeDefined();
+      expect(outputs.ApiGatewayDefaultUrl).toBeDefined();
     });
   });
 });
@@ -429,6 +450,7 @@ describe('Stack Integration', () => {
         'github-connection-arn': 'arn:aws:codeconnections:eu-central-1:123456789012:connection/test-connection',
         s3CookbooksBucket: 'test-cookbooks-bucket',
         dynamoCookbooksTable: 'test-cookbooks-table',
+        openAiApiKey: '/test/openai-api-key',
       },
     });
 

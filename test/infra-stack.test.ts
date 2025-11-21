@@ -17,6 +17,7 @@ describe('Kitchen ServiceStack (API & Lambda)', () => {
       context: {
         s3CookbooksBucket: 'test-cookbooks-bucket',
         dynamoCookbooksTable: 'test-cookbooks-table',
+        openAiApiKey: '/test/openai-api-key',
       },
     });
     const stack = new KitchenServiceStack(app, 'TestServiceStack', { env: testEnv });
@@ -29,7 +30,7 @@ describe('Kitchen ServiceStack (API & Lambda)', () => {
     delete process.env.CHEF_IMAGE_TAG;
   });
 
-  test('ServiceStack creates API Gateway with custom domain', () => {
+  test('ServiceStack creates HTTP API v2 with custom domain', () => {
     process.env.PREPPER_IMAGE_TAG = 'sha256:test1234';
     process.env.CHEF_IMAGE_TAG = 'sha256:test5678';
 
@@ -37,27 +38,33 @@ describe('Kitchen ServiceStack (API & Lambda)', () => {
       context: {
         s3CookbooksBucket: 'test-cookbooks-bucket',
         dynamoCookbooksTable: 'test-cookbooks-table',
+        openAiApiKey: '/test/openai-api-key',
       },
     });
     const stack = new KitchenServiceStack(app, 'TestServiceStack', { env: testEnv });
     const template = Template.fromStack(stack);
 
-    // Test API Gateway is created
-    template.hasResourceProperties('AWS::ApiGateway::RestApi', {
-      Description: 'Kitchen API Gateway',
+    // Test HTTP API v2 is created
+    template.hasResourceProperties('AWS::ApiGatewayV2::Api', {
+      Name: 'KitchenHttpApi',
+      ProtocolType: 'HTTP',
     });
 
     // Test custom domain
-    template.hasResourceProperties('AWS::ApiGateway::DomainName', {
+    template.hasResourceProperties('AWS::ApiGatewayV2::DomainName', {
       DomainName: 'cook.hautomation.org',
     });
 
     // Test Lambda functions are created
     template.resourceCountIs('AWS::Lambda::Function', 2);
 
-    // Test API Gateway methods
-    template.hasResourceProperties('AWS::ApiGateway::Method', {
-      HttpMethod: 'GET',
+    // Test API routes
+    template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+      RouteKey: 'GET /fetch',
+    });
+
+    template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+      RouteKey: 'GET /loadRecipe',
     });
 
     delete process.env.PREPPER_IMAGE_TAG;
@@ -72,13 +79,24 @@ describe('Kitchen ServiceStack (API & Lambda)', () => {
       context: {
         s3CookbooksBucket: 'test-cookbooks-bucket',
         dynamoCookbooksTable: 'test-cookbooks-table',
+        openAiApiKey: '/test/openai-api-key',
       },
     });
     const stack = new KitchenServiceStack(app, 'TestServiceStack', { env: testEnv });
     const template = Template.fromStack(stack);
 
+    // Chef Lambda: 512MB
     template.hasResourceProperties('AWS::Lambda::Function', {
+      FunctionName: 'chef',
       MemorySize: 512,
+      Timeout: 30,
+      PackageType: 'Image',
+    });
+
+    // Prepper Lambda: 4096MB
+    template.hasResourceProperties('AWS::Lambda::Function', {
+      FunctionName: 'prepper',
+      MemorySize: 4096,
       Timeout: 30,
       PackageType: 'Image',
     });
@@ -95,6 +113,7 @@ describe('Kitchen ServiceStack (API & Lambda)', () => {
       context: {
         s3CookbooksBucket: 'test-cookbooks-bucket',
         dynamoCookbooksTable: 'test-cookbooks-table',
+        openAiApiKey: '/test/openai-api-key',
       },
     });
     const stack = new KitchenServiceStack(app, 'TestServiceStack', { env: testEnv });
