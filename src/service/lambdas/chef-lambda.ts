@@ -30,13 +30,11 @@ export class ChefLambda extends Construct {
       repositoryName: props.repositoryName,
     });
 
-    // Get parameter name from context
     const openAiParamName = this.node.tryGetContext('openAiApiKey');
     if (!openAiParamName) {
       throw new Error('Context variable "openAiApiKey" is required');
     }
 
-    // Resolve value from SSM Parameter Store at synth time
     const openAiValue = ssm.StringParameter.valueForStringParameter(this, openAiParamName);
 
     const chefLogGroup = new logs.LogGroup(this, 'ChefLogGroup', {
@@ -60,8 +58,6 @@ export class ChefLambda extends Construct {
       },
     });
 
-    // Grant read/write access to S3 bucket and DynamoDB table
-    // Uses CDK grants (more maintainable than manual IAM policies)
     props.cookbooksBucket.grantReadWrite(this.function);
     props.cookbooksTable.grantReadWriteData(this.function);
   }

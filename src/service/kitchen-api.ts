@@ -22,18 +22,15 @@ export class KitchenApi extends Construct {
   constructor(scope: Construct, id: string, props: KitchenApiProps) {
     super(scope, id);
 
-    // Lookup existing hosted zone
     const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
       domainName: props.hostedZoneName,
     });
 
-    // Certificate for custom domain
     const certificate = new certificatemanager.Certificate(this, 'Certificate', {
       domainName: props.domainName,
       validation: certificatemanager.CertificateValidation.fromDns(hostedZone),
     });
 
-    // HTTP API Gateway
     this.api = new apigwv2.HttpApi(this, 'HttpApi', {
       apiName: 'KitchenHttpApi',
       description: 'Kitchen API Gateway (HTTP API v2) with Firebase JWT authentication',
@@ -49,7 +46,6 @@ export class KitchenApi extends Construct {
       },
     });
 
-    // Lambda integrations
     const prepperIntegration = new integrations.HttpLambdaIntegration(
       'PrepperIntegration',
       props.prepperFunction
@@ -60,27 +56,18 @@ export class KitchenApi extends Construct {
       props.chefFunction
     );
 
-    // ===================
-    // Prepper Routes (no auth)
-    // ===================
     this.api.addRoutes({
       path: '/fetch',
       methods: [apigwv2.HttpMethod.GET],
       integration: prepperIntegration,
     });
 
-    // ===================
-    // Chef Routes
-    // ===================
-
-    // Health check (no auth)
     this.api.addRoutes({
       path: '/health',
       methods: [apigwv2.HttpMethod.GET],
       integration: chefIntegration,
     });
 
-    // Load recipe (authenticated)
     this.api.addRoutes({
       path: '/recipe/load',
       methods: [apigwv2.HttpMethod.POST],
@@ -88,7 +75,6 @@ export class KitchenApi extends Construct {
       authorizer: props.firebaseAuthorizer,
     });
 
-    // Improve recipe with AI (authenticated)
     this.api.addRoutes({
       path: '/recipe/{urlHash}/improve',
       methods: [apigwv2.HttpMethod.POST],
@@ -96,7 +82,6 @@ export class KitchenApi extends Construct {
       authorizer: props.firebaseAuthorizer,
     });
 
-    // Get recipe by urlHash (authenticated)
     this.api.addRoutes({
       path: '/recipe/{urlHash}',
       methods: [apigwv2.HttpMethod.GET],
@@ -104,7 +89,6 @@ export class KitchenApi extends Construct {
       authorizer: props.firebaseAuthorizer,
     });
 
-    // Update recipe (authenticated)
     this.api.addRoutes({
       path: '/recipe/{urlHash}',
       methods: [apigwv2.HttpMethod.PUT],
@@ -112,19 +96,16 @@ export class KitchenApi extends Construct {
       authorizer: props.firebaseAuthorizer,
     });
 
-    // Custom domain
     this.domain = new apigwv2.DomainName(this, 'CustomDomain', {
       domainName: props.domainName,
       certificate,
     });
 
-    // Map the API base path to the custom domain
     new apigwv2.ApiMapping(this, 'ApiMapping', {
       api: this.api,
       domainName: this.domain,
     });
 
-    // Route53 alias record for the custom domain
     new route53.ARecord(this, 'AliasRecord', {
       zone: hostedZone,
       recordName: props.domainName,
