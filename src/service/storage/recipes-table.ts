@@ -13,7 +13,7 @@ export class RecipesTable extends Construct {
 		super(scope, id);
 
 		this.table = new dynamodb.Table(this, 'Table', {
-			tableName: 'Recipes',
+			tableName: 'recipes',
 			partitionKey: {
 				name: 'PK',
 				type: dynamodb.AttributeType.STRING,

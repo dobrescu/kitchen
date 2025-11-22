@@ -13,7 +13,7 @@ export class RecipeMetadataBucket extends Construct {
 		super(scope, id);
 
 		this.bucket = new s3.Bucket(this, 'Bucket', {
-			bucketName: 'recipe-metadata',
+			bucketName: 'recipes-metadata',
 			blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
 			versioned: false,
 			encryption: s3.BucketEncryption.S3_MANAGED,

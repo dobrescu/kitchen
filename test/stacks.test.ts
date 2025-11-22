@@ -218,7 +218,7 @@ describe('ServiceStack (API Gateway & Lambdas)', () => {
 
     test('creates DynamoDB table for recipes', () => {
       template.hasResourceProperties('AWS::DynamoDB::Table', {
-        TableName: 'Recipes',
+        TableName: 'recipes',
         BillingMode: 'PAY_PER_REQUEST',
         AttributeDefinitions: [
           { AttributeName: 'PK', AttributeType: 'S' },
@@ -234,7 +234,7 @@ describe('ServiceStack (API Gateway & Lambdas)', () => {
     test('enables encryption and PITR for DynamoDB table', () => {
       const tables = template.findResources('AWS::DynamoDB::Table');
       const recipesTable = Object.values(tables).find(
-        (t: any) => t.Properties.TableName === 'Recipes'
+        (t: any) => t.Properties.TableName === 'recipes'
       );
       expect(recipesTable).toBeDefined();
       expect(recipesTable.Properties.SSESpecification).toBeDefined();
