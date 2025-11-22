@@ -40,6 +40,7 @@ export class KitchenApi extends Construct {
           apigwv2.CorsHttpMethod.GET,
           apigwv2.CorsHttpMethod.POST,
           apigwv2.CorsHttpMethod.PUT,
+          apigwv2.CorsHttpMethod.DELETE,
           apigwv2.CorsHttpMethod.OPTIONS,
         ],
         allowHeaders: ['Content-Type', 'Authorization'],
@@ -92,6 +93,20 @@ export class KitchenApi extends Construct {
     this.api.addRoutes({
       path: '/recipe/{urlHash}',
       methods: [apigwv2.HttpMethod.PUT],
+      integration: chefIntegration,
+      authorizer: props.firebaseAuthorizer,
+    });
+
+    this.api.addRoutes({
+      path: '/recipes',
+      methods: [apigwv2.HttpMethod.GET],
+      integration: chefIntegration,
+      authorizer: props.firebaseAuthorizer,
+    });
+
+    this.api.addRoutes({
+      path: '/recipe/{urlHash}',
+      methods: [apigwv2.HttpMethod.DELETE],
       integration: chefIntegration,
       authorizer: props.firebaseAuthorizer,
     });

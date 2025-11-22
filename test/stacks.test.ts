@@ -282,6 +282,14 @@ describe('ServiceStack (API Gateway & Lambdas)', () => {
       template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
         RouteKey: 'PUT /recipe/{urlHash}',
       });
+
+      template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+        RouteKey: 'GET /recipes',
+      });
+
+      template.hasResourceProperties('AWS::ApiGatewayV2::Route', {
+        RouteKey: 'DELETE /recipe/{urlHash}',
+      });
     });
 
     test('creates Firebase JWT authorizer', () => {
