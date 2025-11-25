@@ -1,3 +1,4 @@
+import * as cdk from 'aws-cdk-lib';
 import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
@@ -47,6 +48,20 @@ export class KitchenDeployPipeline extends Construct {
       environment: {
         buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
         computeType: codebuild.ComputeType.SMALL,
+        environmentVariables: {
+          CHEF_IMAGE_TAG: {
+            value: 'latest',
+          },
+          PREPPER_IMAGE_TAG: {
+            value: 'latest',
+          },
+          CDK_DEFAULT_ACCOUNT: {
+            value: cdk.Stack.of(this).account,
+          },
+          CDK_DEFAULT_REGION: {
+            value: cdk.Stack.of(this).region,
+          },
+        },
       },
       buildSpec: codebuild.BuildSpec.fromSourceFilename('buildspec.deploy.yml'),
     });

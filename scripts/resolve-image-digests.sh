@@ -26,20 +26,19 @@ MANIFEST_FILE="$PROJECT_ROOT/image-manifest.json"
 readonly MANIFEST_FILE
 
 #---------------------------------------
-# Validate environment file
+# Load environment variables (optional)
 #---------------------------------------
-if [[ ! -f "$ENV_FILE" ]]; then
-  echo "Error: $ENV_FILE not found" >&2
-  exit 1
+# Source .env file if it exists (for local development)
+# In CI/CD, environment variables should be pre-configured
+if [[ -f "$ENV_FILE" ]]; then
+  echo "Loading environment from $ENV_FILE"
+  set -a
+  # shellcheck source=/dev/null
+  source "$ENV_FILE"
+  set +a
+else
+  echo "No .env file found, using environment variables"
 fi
-
-#---------------------------------------
-# Load environment variables
-#---------------------------------------
-set -a
-# shellcheck source=/dev/null
-source "$ENV_FILE"
-set +a
 
 #---------------------------------------
 # Validate AWS credentials
@@ -101,7 +100,7 @@ echo "Resolving image digests..."
 declare -a manifest_entries=()
 first=true
 
-# Read all *_IMAGE_TAG variables from .env
+# Read all *_IMAGE_TAG variables from environment
 while IFS='=' read -r var_name value; do
   if [[ ! "$var_name" =~ ^[A-Z]+_IMAGE_TAG$ ]]; then
     continue
@@ -125,7 +124,7 @@ while IFS='=' read -r var_name value; do
   fi
 
   manifest_entries+=("$(printf '  \"%s\": {\n    \"tag\": \"%s\",\n    \"digest\": \"%s\"\n  }' "$repo" "$original_tag" "$digest")")
-done < <(grep -E '^[A-Z]+_IMAGE_TAG=' "$ENV_FILE")
+done < <(env | grep -E '^[A-Z]+_IMAGE_TAG=')
 
 #---------------------------------------
 # Write manifest JSON
