@@ -112,7 +112,7 @@ Lambda functions read from this manifest (fallback to `*_IMAGE_TAG` env vars if 
 
 ### Auto-Deployment
 - ECR image push (SUCCESS) → EventBridge triggers Kitchen-Deploy
-- Pipeline runs `buildspec-deploy.yml`:
+- Pipeline runs `buildspec.deploy.yml`:
   1. Tests (`yarn test`)
   2. Lint + typecheck
   3. Resolve digests (`yarn resolve-digests`)

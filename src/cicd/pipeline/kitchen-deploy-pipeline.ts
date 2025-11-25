@@ -19,7 +19,7 @@ export interface KitchenDeployPipelineProps {
  * 1. Source: GitHub repository (Kitchen CDK code)
  * 2. Deploy: Runs tests, resolves digests, and deploys kitchen stack
  *
- * Uses buildspec-deploy.yml which:
+ * Uses buildspec.deploy.yml which:
  * - Runs tests and validation
  * - Resolves ECR image digests
  * - Deploys the kitchen stack

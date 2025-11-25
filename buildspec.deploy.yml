@@ -4,6 +4,7 @@ phases:
   install:
     commands:
       - echo "Installing dependencies..."
+      - corepack enable && corepack prepare yarn@stable && corepack use yarn@stable
       - yarn install --immutable
 
   pre_build:
