@@ -4,7 +4,7 @@ import { KitchenImports } from '../infra/kitchen-imports.js';
 import { ChefLambda } from './lambdas/chef-lambda.js';
 import { PrepperLambda } from './lambdas/prepper-lambda.js';
 import { KitchenApi } from './kitchen-api.js';
-import { RecipeMetadataBucket } from './storage/recipe-metadata-bucket.js';
+import { RecipesMetadataBucket } from './storage/recipes-metadata-bucket.js';
 import { RecipesTable } from './storage/recipes-table.js';
 import { FirebaseAuthorizer } from './auth/firebase-authorizer.js';
 
@@ -22,7 +22,7 @@ export class KitchenServiceStack extends cdk.Stack {
 			throw new Error('Context variable "firebaseProjectId" is required (e.g., "kassi-242d1")');
 		}
 
-		const cookbooksBucket = new RecipeMetadataBucket(this, 'RecipeMetadataBucket');
+		const cookbooksBucket = new RecipesMetadataBucket(this, 'RecipesMetadataBucket');
 		const cookbooksTable = new RecipesTable(this, 'RecipesTable');
 
 		const firebaseAuth = new FirebaseAuthorizer(this, 'FirebaseAuthorizer', {

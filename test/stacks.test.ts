@@ -212,7 +212,7 @@ describe('ServiceStack (API Gateway & Lambdas)', () => {
   describe('Storage Resources', () => {
     test('creates S3 bucket for recipe metadata', () => {
       template.hasResourceProperties('AWS::S3::Bucket', {
-        BucketName: 'recipe-metadata',
+        BucketName: 'recipes-metadata',
       });
     });
 
